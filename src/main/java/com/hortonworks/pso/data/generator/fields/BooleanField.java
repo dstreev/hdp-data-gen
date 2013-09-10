@@ -25,7 +25,7 @@ import java.util.Random;
 public class BooleanField extends AbstractFieldType implements FieldType<String> {
 
     String[] booleanValues = new String[]{"F","T"};
-    Random random = new Random(127);
+    Random random = new Random();
 
     public BooleanField(JsonNode node) {
         super(node);

@@ -22,6 +22,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 public interface FieldType<T> {
     JsonNode getJsonNode();
+    boolean hasOrder();
+    Integer getOrder();
+    void setOrder(Integer order);
     T getValue();
     T getPoolValue();
 }

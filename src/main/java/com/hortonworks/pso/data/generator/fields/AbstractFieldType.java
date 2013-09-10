@@ -20,15 +20,33 @@ package com.hortonworks.pso.data.generator.fields;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-public class AbstractFieldType {
+public abstract class AbstractFieldType {
+    private Integer order;
     private JsonNode node;
+
+    public boolean hasOrder() {
+        return order != null ? true : false;
+    }
+
+    public Integer getOrder() {
+        return order;
+    }
+
+    public void setOrder(Integer order) {
+        this.order = order;
+    }
 
     public JsonNode getJsonNode() {
         return node;
     }
 
     public AbstractFieldType(JsonNode node) {
-        this.node = node;
+        if (node != null) {
+            this.node = node;
+            if (node.has("order")) {
+                order = node.get("order").asInt();
+            }
+        }
     }
 
 }

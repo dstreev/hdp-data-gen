@@ -60,18 +60,22 @@ public class RecordGenerator {
             } else if (fieldNode.has("null")) {
                 FieldType field = new NullField(fieldNode.get("null"));
                 addFields(field);
+            } else if (fieldNode.has("start.stop")) {
+                StartStopFields fields = new StartStopFields(fieldNode.get("start.stop"));
+                addFields(fields.getStartField());
+                addFields(fields.getStopField());
             }
         }
     }
 
     private void addFields(FieldType field) {
-        boolean fieldHasOrder = field.getJsonNode().has("order");
+        boolean fieldHasOrder = field.hasOrder();
         if (orderForced | fieldHasOrder) {
             orderForced = true;
             if (!fieldHasOrder) {
                 throw new RuntimeException("Once order is used to control field positions, it must be used in every field definition.");
             } else {
-                fields.put(field.getJsonNode().get("order").asInt(), field);
+                fields.put(field.getOrder(), field);
             }
         } else {
            fields.put(fields.size(),field);

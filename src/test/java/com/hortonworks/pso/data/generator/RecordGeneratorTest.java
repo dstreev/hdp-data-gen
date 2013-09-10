@@ -73,6 +73,21 @@ public class RecordGeneratorTest {
     }
 
     @Test
+    public void Test004() {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            JsonNode rootNode = mapper.readValue(new File("src/main/resources/sample-startstop-generator.json"), JsonNode.class);
+
+            RecordGenerator recGen = new RecordGenerator(rootNode);
+
+            groupGen(recGen);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
     public void Test050() {
         ObjectMapper mapper = new ObjectMapper();
         try {

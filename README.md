@@ -88,6 +88,28 @@ Produces a random date between the two dates supplied in the range.  The range v
         }
 </pre></code>
 
+### Start.Stop
+Produces a start and stop date field that are consistent with each other and vary by a range determined in by the "spread" configuration.
+
+The order, when supplied, is an array containing the precedence in the output.  If it isn't supplied the fields will be added (start then stop) to the record based on the order in the configuration file.
+
+<pre><code>
+        {
+            "start.stop": {
+                "order": [1,2],
+                "format": "yyyy-MM-dd HH:mm:ss",
+                "range": {
+                    "min": "2010-01-01 00:00:00",
+                    "max": "2013-04-01 23:59:59"
+                },
+                "spread": {
+                    "min": 100,
+                    "max": 100000
+                }
+            }
+        }
+</pre></code>
+
 ### IPAddressField
 Produces a random Ip address between the values defined in "minIp" and "maxIp".  Pooling is also supported and follows the same pattern used for "pool" in the StringField.
 

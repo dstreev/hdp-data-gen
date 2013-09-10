@@ -26,7 +26,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Random;
 
-public class DateField extends AbstractFieldType implements FieldType {
+public class DateField extends AbstractFieldType implements FieldType<String> {
 
     private String[] pool;
     private Long min = 0l;
