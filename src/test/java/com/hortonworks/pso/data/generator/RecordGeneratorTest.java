@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 
 import java.io.File;
+import java.util.Date;
 
 public class RecordGeneratorTest {
 
@@ -94,12 +95,13 @@ public class RecordGeneratorTest {
             JsonNode rootNode = mapper.readValue(new File("src/main/resources/sample-record-generator.json"), JsonNode.class);
 
             RecordGenerator recGen = new RecordGenerator(rootNode);
-
-            System.out.println("Start");
-            for (int i=0;i<1000;i++) {
+            long start = new Date().getTime();
+            System.out.println("Starting.. " );
+            for (int i=0;i<1000000;i++) {
                 String value = recGen.next();
             }
-            System.out.println("End");
+            long end = new Date().getTime();
+            System.out.println("Finished generating 1,000,000 in (ms): " + (end-start));
 
 
         } catch (Exception e) {
