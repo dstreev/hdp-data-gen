@@ -16,22 +16,22 @@
  * limitations under the License.
  */
 
-package com.hortonworks.pso.data.generator;
+package com.hortonworks.pso.data.generator.fields;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.hortonworks.pso.data.generator.fields.*;
 
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class RecordGenerator {
+public class NestedField extends AbstractFieldType implements FieldType<String> {
+    private boolean orderForced = false;
     private Map<Integer,FieldType> fields = new TreeMap<Integer,FieldType>();
     private String delimiter = "\t";
-    private boolean orderForced = false;
 
-    public RecordGenerator(JsonNode node) {
-        // This node should be either the "root" node OR the "fields" node.
+    public NestedField(JsonNode node) {
+        super(node);
+
         delimiter = node.get("delimiter").asText();
 
         JsonNode fieldsNode = node.get("fields");
@@ -77,14 +77,12 @@ public class RecordGenerator {
                 fields.put(field.getOrder(), field);
             }
         } else {
-           fields.put(fields.size(),field);
+            fields.put(fields.size(),field);
         }
     }
 
-    /*
-    Generate New Record.
-     */
-    public String next() {
+    @Override
+    public String getValue() {
         StringBuilder sb = new StringBuilder();
         Iterator<Map.Entry<Integer,FieldType>> fieldsIterator = fields.entrySet().iterator();
 
@@ -98,4 +96,8 @@ public class RecordGenerator {
         return sb.toString();
     }
 
+    @Override
+    public String getPoolValue() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
 }
