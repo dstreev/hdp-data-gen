@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Random;
 import java.util.TreeMap;
 
 public class NestedField extends AbstractFieldType implements FieldType<String> {
@@ -29,10 +30,20 @@ public class NestedField extends AbstractFieldType implements FieldType<String> 
     private Map<Integer,FieldType> fields = new TreeMap<Integer,FieldType>();
     private String delimiter = "\t";
 
+    private int repeats = 1;
+    private String repeatsDelimiter = ",";
+
+    private Random generator = new Random();
+
     public NestedField(JsonNode node) {
         super(node);
 
         delimiter = node.get("delimiter").asText();
+
+        if(node.has("repeats")) {
+            repeats = node.get("repeats").asInt();
+            repeatsDelimiter = node.get("repeatsDelimiter").asText();
+        }
 
         JsonNode fieldsNode = node.get("fields");
 
@@ -84,13 +95,22 @@ public class NestedField extends AbstractFieldType implements FieldType<String> 
     @Override
     public String getValue() {
         StringBuilder sb = new StringBuilder();
-        Iterator<Map.Entry<Integer,FieldType>> fieldsIterator = fields.entrySet().iterator();
 
-        while (fieldsIterator.hasNext()) {
-            Map.Entry<Integer, FieldType> fieldMapRec = fieldsIterator.next();
-            sb.append(fieldMapRec.getValue().getValue());
-            if (fieldsIterator.hasNext())
-                sb.append(delimiter);
+        // Fix for random number generator going from 0 <= x < repeats
+        int numRepeats = generator.nextInt(repeats) + 1;
+        for(int i=0; i < numRepeats; i++) {
+            Iterator<Map.Entry<Integer,FieldType>> fieldsIterator = fields.entrySet().iterator();
+
+            while (fieldsIterator.hasNext()) {
+                Map.Entry<Integer, FieldType> fieldMapRec = fieldsIterator.next();
+                sb.append(fieldMapRec.getValue().getValue());
+                if (fieldsIterator.hasNext())
+                    sb.append(delimiter);
+            }
+
+            if(i+1 < numRepeats) {
+                sb.append(repeatsDelimiter);
+            }
         }
 
         return sb.toString();
@@ -98,6 +118,6 @@ public class NestedField extends AbstractFieldType implements FieldType<String> 
 
     @Override
     public String getPoolValue() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 }
