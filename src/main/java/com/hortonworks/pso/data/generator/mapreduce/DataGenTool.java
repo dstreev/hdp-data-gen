@@ -18,6 +18,7 @@
 
 package com.hortonworks.pso.data.generator.mapreduce;
 
+import org.apache.commons.cli.*;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
@@ -25,6 +26,7 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.MRJobConfig;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -32,6 +34,7 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,15 +42,85 @@ import java.util.List;
 
 public class DataGenTool extends Configured implements Tool {
 
-    static int printUsage() {
-    System.out.println("\nUsage: hadoop jar <this.jar> " +
-                        DataGenTool.class.getCanonicalName() +
-                        " -mappers <stations-file> " +
-                        "-output <output> " +
-                        "-json.cfg <config> " +
-                        "-count <count per mapper>\n ");
-        ToolRunner.printGenericCommandUsage(System.out);
-        return 2;
+    static private Logger logger = Logger.getLogger(DataGenTool.class.getName());
+
+    private Options options;
+    private Path outputPath;
+    public static final int DEFAULT_MAPPERS = 2;
+    public static final long DEFAULT_COUNT = 100;
+
+    public DataGenTool() {
+        buildOptions();
+    }
+
+    private void buildOptions() {
+        options = new Options();
+        Option mappers = OptionBuilder.withArgName("mappers")
+                .hasArg()
+                .withDescription("parallelism")
+                .create("mappers");
+        Option outputDir = OptionBuilder.withArgName("output")
+                .hasArg()
+                .withDescription("hdfs output directory")
+                .create("output");
+        Option config = OptionBuilder.withArgName("json.cfg")
+                .hasArg()
+                .withDescription("control file")
+                .create("jsonCfg");
+        Option count = OptionBuilder.withArgName("count")
+                .hasArg()
+                .withDescription("total record count")
+                .create("count");
+        options.addOption(mappers);
+        options.addOption(outputDir);
+        options.addOption(config);
+        options.addOption(count);
+    }
+
+    private void printUsage() {
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp("hadoop jar <jar-file>" + this.getClass().getCanonicalName(), options);
+    }
+
+    private boolean checkUsage(String[] args, Job job) {
+        boolean rtn = true;
+        Configuration configuration = job.getConfiguration();
+
+        CommandLineParser clParser = new GnuParser();
+        CommandLine line = null;
+        try {
+            line = clParser.parse(options, args);
+        } catch (ParseException pe) {
+            printUsage();
+        }
+
+        if (line.hasOption("count")) {
+            DataGenInputFormat.setNumberOfRows(job, Long.parseLong(line.getOptionValue("count")));
+        } else {
+            DataGenInputFormat.setNumberOfRows(job, DEFAULT_COUNT);
+        }
+
+        if (line.hasOption("mappers")) {
+            configuration.set(MRJobConfig.NUM_MAPS, line.getOptionValue("mappers"));
+        } else {
+            // Default
+            configuration.setInt(MRJobConfig.NUM_MAPS, DEFAULT_MAPPERS);
+        }
+
+        if (line.hasOption("output")) {
+            outputPath = new Path(line.getOptionValue("output"));
+            FileOutputFormat.setOutputPath(job, outputPath);
+        } else {
+            return false;
+        }
+
+        if (line.hasOption("jsonCfg")) {
+            configuration.set(DataGenMapper.CONFIG_FILE, line.getOptionValue("jsonCfg"));
+        } else {
+            return false;
+        }
+
+        return rtn;
     }
 
 
@@ -56,71 +129,29 @@ public class DataGenTool extends Configured implements Tool {
 
         Job job = Job.getInstance(getConf()); // new Job(conf, this.getClass().getCanonicalName());
 
-//        Configuration conf = getConf();
-
-        int mappers = 2;
-        String output = null;
-        String config = null;
-        long count = 100;
-
-        List<String> otherArgs = new ArrayList<String>();
-        for(int i=0; i < args.length; ++i) {
-          try {
-            if ("-mappers".equals(args[i])) {
-              mappers = Integer.parseInt(args[++i]);
-              otherArgs.add("-Dmapreduce.job.maps="+Integer.toString(mappers));
-            } else if ("-output".equals(args[i])) {
-              output = args[++i];
-            } else if ("-json.cfg".equals(args[i])) {
-              config = args[++i];
-            } else if ("-count".equals(args[i])) {
-              count = Long.parseLong(args[++i]);
-            } else {
-                  otherArgs.add(args[i]);
-            }
-
-          } catch (NumberFormatException except) {
-            System.out.println("ERROR: Integer expected instead of " + args[i]);
-            return printUsage();
-          } catch (ArrayIndexOutOfBoundsException except) {
-            System.out.println("ERROR: Required parameter missing from " +
-                args[i-1]);
-            return printUsage(); // exits
-          }
+        System.out.println("Check Usage");
+        if (!checkUsage(args, job)) {
+            printUsage();
+            return -1;
         }
-
-        job.getConfiguration().set("json.cfg", config);
-
-        String[] altArgs = new String[otherArgs.size()];
-        otherArgs.toArray(altArgs);
-
-        GenericOptionsParser gop = new GenericOptionsParser(job.getConfiguration(), altArgs);
-
-        DataGenInputFormat.setNumberOfRows(job,count);
 
         job.setJarByClass(DataGenTool.class);
 
-        Path output_path = new Path(output);
-
-        if (output_path.getFileSystem(getConf()).exists(output_path)) {
-            throw new IOException("Output directory " + output_path +
-                    " already exists.");
+        if (outputPath == null || outputPath.getFileSystem(job.getConfiguration()).exists(outputPath)) {
+            throw new IOException("Output directory " + outputPath +
+                    " already exists OR is missing from parameters list.");
         }
 
-        FileOutputFormat.setOutputPath(job, output_path);
-
         job.setMapperClass(DataGenMapper.class);
+
         // Map Only Job
         job.setNumReduceTasks(0);
-//        job.setReducerClass(RerateReducer.class);
 
         job.setInputFormatClass(DataGenInputFormat.class);
         job.setOutputFormatClass(TextOutputFormat.class);
 
         job.setMapOutputKeyClass(NullWritable.class);
         job.setMapOutputValueClass(Text.class);
-//        job.setOutputKeyClass(Text.class);
-//        job.setOutputValueClass(Text.class);
 
         return job.waitForCompletion(true) ? 0 : 1;
 

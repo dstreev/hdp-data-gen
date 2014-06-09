@@ -34,12 +34,13 @@ import java.io.IOException;
 
 public class DataGenMapper extends Mapper<LongWritable, NullWritable, NullWritable, Text> {
 
+    public static final String CONFIG_FILE = "app.config.file";
+
     private RecordGenerator recordGenerator;
-    //private long recordCount = 10;
 
     protected void setup(Context context) {
         // Get the conf location from the job conf.
-        String config = context.getConfiguration().get("json.cfg");
+        String config = context.getConfiguration().get(CONFIG_FILE);
 
         System.out.println("Config File: " + config);
 

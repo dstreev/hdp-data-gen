@@ -135,7 +135,7 @@ public class DataGenInputFormat extends InputFormat<LongWritable, NullWritable> 
      */
     public List<InputSplit> getSplits(JobContext job) {
         long totalRows = getNumberOfRows(job);
-        int numSplits = job.getConfiguration().getInt(MRJobConfig.NUM_MAPS, 1);
+        int numSplits = job.getConfiguration().getInt(MRJobConfig.NUM_MAPS, DataGenTool.DEFAULT_MAPPERS);
         LOG.info("Generating " + totalRows + " using " + numSplits);
         List<InputSplit> splits = new ArrayList<InputSplit>();
         long currentRow = 0;
@@ -149,7 +149,7 @@ public class DataGenInputFormat extends InputFormat<LongWritable, NullWritable> 
     }
 
     static long getNumberOfRows(JobContext job) {
-        return job.getConfiguration().getLong(NUM_ROWS, 0);
+        return job.getConfiguration().getLong(NUM_ROWS, DataGenTool.DEFAULT_COUNT);
     }
 
     static void setNumberOfRows(Job job, long numRows) {
