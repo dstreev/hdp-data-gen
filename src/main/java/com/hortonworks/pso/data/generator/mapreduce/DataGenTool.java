@@ -18,27 +18,22 @@
 
 package com.hortonworks.pso.data.generator.mapreduce;
 
+import kafka.bridge.hadoop.KafkaOutputFormat;
 import org.apache.commons.cli.*;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.MRJobConfig;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
-import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class DataGenTool extends Configured implements Tool {
 
@@ -48,6 +43,8 @@ public class DataGenTool extends Configured implements Tool {
     private Path outputPath;
     public static final int DEFAULT_MAPPERS = 2;
     public static final long DEFAULT_COUNT = 100;
+
+    public enum Sink { HDFS, KAFKA};
 
     public DataGenTool() {
         buildOptions();
@@ -59,11 +56,15 @@ public class DataGenTool extends Configured implements Tool {
                 .hasArg()
                 .withDescription("parallelism")
                 .create("mappers");
+        Option sink = OptionBuilder.withArgName("sink")
+                .hasArg()
+                .withDescription("Target Sink: (HDFS|KAFKA) default-HDFS")
+                .create("sink");
         Option outputDir = OptionBuilder.withArgName("output")
                 .hasArg()
-                .withDescription("hdfs output directory")
+                .withDescription("Sink output information. HDFS-Output Directory or Kafka-URL: kafka://<kafka host>/<topic> OR kafka://kafka-server:9000,kafka-server2:9000/foobar")
                 .create("output");
-        Option config = OptionBuilder.withArgName("json.cfg")
+        Option config = OptionBuilder.withArgName("json config")
                 .hasArg()
                 .withDescription("control file")
                 .create("jsonCfg");
@@ -72,6 +73,7 @@ public class DataGenTool extends Configured implements Tool {
                 .withDescription("total record count")
                 .create("count");
         options.addOption(mappers);
+        options.addOption(sink);
         options.addOption(outputDir);
         options.addOption(config);
         options.addOption(count);
@@ -105,6 +107,53 @@ public class DataGenTool extends Configured implements Tool {
         } else {
             // Default
             configuration.setInt(MRJobConfig.NUM_MAPS, DEFAULT_MAPPERS);
+        }
+
+        if (line.hasOption("sink")) {
+            String sinkOption = line.getOptionValue("sink");
+            try {
+                Sink sink = Sink.valueOf(sinkOption.toUpperCase());
+                job.setMapperClass(DataGenMapper.class);
+
+                job.setInputFormatClass(DataGenInputFormat.class);
+
+                job.setMapOutputKeyClass(NullWritable.class);
+                job.setMapOutputValueClass(Text.class);
+
+                switch (sink) {
+                    case HDFS:
+                        job.setOutputFormatClass(TextOutputFormat.class);
+                        if (line.hasOption("output")) {
+                            outputPath = new Path(line.getOptionValue("output"));
+                            FileOutputFormat.setOutputPath(job, outputPath);
+                        } else {
+                            return false;
+                        }
+                        break;
+                    case KAFKA:
+                        job.setOutputFormatClass(KafkaOutputFormat.class);
+                        if (line.hasOption("output")) {
+                            outputPath = new Path(line.getOptionValue("output"));
+                            // The Topic should be included in the URL as well.
+                            KafkaOutputFormat.setOutputPath(job, outputPath);
+                        } else {
+                            return false;
+                        }
+                        break;
+                }
+
+            } catch (IllegalArgumentException iae) {
+                return false;
+            }
+        } else {
+            // Default HDFS.
+            job.setOutputFormatClass(TextOutputFormat.class);
+            if (line.hasOption("output")) {
+                outputPath = new Path(line.getOptionValue("output"));
+                FileOutputFormat.setOutputPath(job, outputPath);
+            } else {
+                return false;
+            }
         }
 
         if (line.hasOption("output")) {
