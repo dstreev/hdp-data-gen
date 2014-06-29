@@ -14,7 +14,7 @@
 >   limitations under the License.
 
 ## Summary
-This is a Data Generator that will run in MapReduce to produce sample datasets that are configured by a json control file.
+This is a Data Generator that will run in MapReduce to produce sample datasets that are configured by a json control file.  Output can be directed to HDFS or to a Kafka Topic.
 
 ## Building
 A maven pom is provided and can be used to build the project with:
@@ -23,7 +23,7 @@ A maven pom is provided and can be used to build the project with:
 This will also create a target/lib directory with the jar's that need to be copied to HDFS to support the Mappers.
 
 ## Running
-In the "bin" directory there are 3 scripts.  The rungentool.sh script will make calls out to the "genjars.sh" and "hadoop_classpath.sh" scripts to build the appropriate classpaths for the "tool" and the Mappers launched on the cluster.  Review these files for important information regarding third-party library placement.
+
 
 ## Json Schema and Examples
 Are in the src/main/resources directory and will be a part of the binary created from maven.

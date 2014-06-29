@@ -117,11 +117,15 @@
             <artifactId>${kafka.artifact}</artifactId>
             <version>${kafka.version}</version>
         </dependency>
-        <dependency>
+        <!--dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>hadoop-producer</artifactId>
             <version>${kafka.hadoop.producer.version}</version>
             <exclusions>
+                <exclusion>
+                    <groupId>org.apache.kafka</groupId>
+                    <artifactId>kafka_2.10</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId> org.apache.pig</groupId>
                     <artifactId>pig</artifactId>
@@ -151,7 +155,7 @@
                     <artifactId>slf4j-simple</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
+        </dependency-->
 
         <!-- Misc. -->
         <dependency>

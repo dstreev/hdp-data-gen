@@ -18,7 +18,7 @@
 
 package com.hortonworks.pso.data.generator.mapreduce;
 
-import kafka.bridge.hadoop.KafkaOutputFormat;
+import kafka.bridge.hadoop2.KafkaOutputFormat;
 import org.apache.commons.cli.*;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -37,10 +37,11 @@ import java.io.IOException;
 
 public class DataGenTool extends Configured implements Tool {
 
-    static private Logger logger = Logger.getLogger(DataGenTool.class.getName());
+    static private Logger LOG = Logger.getLogger(DataGenTool.class.getName());
 
     private Options options;
     private Path outputPath;
+    private Sink sink;
     public static final int DEFAULT_MAPPERS = 2;
     public static final long DEFAULT_COUNT = 100;
 
@@ -52,6 +53,9 @@ public class DataGenTool extends Configured implements Tool {
 
     private void buildOptions() {
         options = new Options();
+        Option help = OptionBuilder
+                .withDescription("This help")
+                .create("help");
         Option mappers = OptionBuilder.withArgName("mappers")
                 .hasArg()
                 .withDescription("parallelism")
@@ -72,6 +76,7 @@ public class DataGenTool extends Configured implements Tool {
                 .hasArg()
                 .withDescription("total record count")
                 .create("count");
+        options.addOption(help);
         options.addOption(mappers);
         options.addOption(sink);
         options.addOption(outputDir);
@@ -96,6 +101,10 @@ public class DataGenTool extends Configured implements Tool {
             printUsage();
         }
 
+        if (line.hasOption("help")) {
+            return false;
+        }
+
         if (line.hasOption("count")) {
             DataGenInputFormat.setNumberOfRows(job, Long.parseLong(line.getOptionValue("count")));
         } else {
@@ -112,13 +121,12 @@ public class DataGenTool extends Configured implements Tool {
         if (line.hasOption("sink")) {
             String sinkOption = line.getOptionValue("sink");
             try {
-                Sink sink = Sink.valueOf(sinkOption.toUpperCase());
-                job.setMapperClass(DataGenMapper.class);
+                sink = Sink.valueOf(sinkOption.toUpperCase());
 
                 job.setInputFormatClass(DataGenInputFormat.class);
 
-                job.setMapOutputKeyClass(NullWritable.class);
-                job.setMapOutputValueClass(Text.class);
+
+                LOG.info("Using Sink:" + sink.toString());
 
                 switch (sink) {
                     case HDFS:
@@ -126,6 +134,9 @@ public class DataGenTool extends Configured implements Tool {
                         if (line.hasOption("output")) {
                             outputPath = new Path(line.getOptionValue("output"));
                             FileOutputFormat.setOutputPath(job, outputPath);
+                            job.setMapperClass(DataGenMapper.class);
+                            job.setMapOutputKeyClass(NullWritable.class);
+                            job.setMapOutputValueClass(Text.class);
                         } else {
                             return false;
                         }
@@ -135,6 +146,9 @@ public class DataGenTool extends Configured implements Tool {
                         if (line.hasOption("output")) {
                             outputPath = new Path(line.getOptionValue("output"));
                             // The Topic should be included in the URL as well.
+                            job.setMapperClass(KafkaDataGenMapper.class);
+//                            job.setMapOutputKeyClass(NullWritable.class);
+//                            job.setMapOutputValueClass(byte[].class);
                             KafkaOutputFormat.setOutputPath(job, outputPath);
                         } else {
                             return false;
@@ -154,13 +168,6 @@ public class DataGenTool extends Configured implements Tool {
             } else {
                 return false;
             }
-        }
-
-        if (line.hasOption("output")) {
-            outputPath = new Path(line.getOptionValue("output"));
-            FileOutputFormat.setOutputPath(job, outputPath);
-        } else {
-            return false;
         }
 
         if (line.hasOption("jsonCfg")) {
@@ -186,21 +193,13 @@ public class DataGenTool extends Configured implements Tool {
 
         job.setJarByClass(DataGenTool.class);
 
-        if (outputPath == null || outputPath.getFileSystem(job.getConfiguration()).exists(outputPath)) {
+        if (sink == Sink.HDFS && (outputPath == null || outputPath.getFileSystem(job.getConfiguration()).exists(outputPath))) {
             throw new IOException("Output directory " + outputPath +
                     " already exists OR is missing from parameters list.");
         }
 
-        job.setMapperClass(DataGenMapper.class);
-
         // Map Only Job
         job.setNumReduceTasks(0);
-
-        job.setInputFormatClass(DataGenInputFormat.class);
-        job.setOutputFormatClass(TextOutputFormat.class);
-
-        job.setMapOutputKeyClass(NullWritable.class);
-        job.setMapOutputValueClass(Text.class);
 
         return job.waitForCompletion(true) ? 0 : 1;
 
