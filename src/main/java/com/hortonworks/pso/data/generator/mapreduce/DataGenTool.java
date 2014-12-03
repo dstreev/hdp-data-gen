@@ -105,6 +105,8 @@ public class DataGenTool extends Configured implements Tool {
             return false;
         }
 
+        job.setInputFormatClass(DataGenInputFormat.class);
+
         if (line.hasOption("count")) {
             DataGenInputFormat.setNumberOfRows(job, Long.parseLong(line.getOptionValue("count")));
         } else {
@@ -124,7 +126,6 @@ public class DataGenTool extends Configured implements Tool {
                 sink = Sink.valueOf(sinkOption.toUpperCase());
 
                 job.setInputFormatClass(DataGenInputFormat.class);
-
 
                 LOG.info("Using Sink:" + sink.toString());
 
@@ -161,7 +162,12 @@ public class DataGenTool extends Configured implements Tool {
             }
         } else {
             // Default HDFS.
+            LOG.info("No SINK specified, using DEFAULT (HDFS)");
+            job.setInputFormatClass(DataGenInputFormat.class);
             job.setOutputFormatClass(TextOutputFormat.class);
+            job.setMapperClass(DataGenMapper.class);
+            job.setMapOutputKeyClass(NullWritable.class);
+            job.setMapOutputValueClass(Text.class);
             if (line.hasOption("output")) {
                 outputPath = new Path(line.getOptionValue("output"));
                 FileOutputFormat.setOutputPath(job, outputPath);
@@ -173,7 +179,7 @@ public class DataGenTool extends Configured implements Tool {
         if (line.hasOption("jsonCfg")) {
             configuration.set(DataGenMapper.CONFIG_FILE, line.getOptionValue("jsonCfg"));
         } else {
-            return false;
+            configuration.set(DataGenMapper.CONFIG_FILE, "DEFAULT");
         }
 
         return rtn;

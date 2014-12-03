@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.Date;
 
 public class RecordGeneratorTest {
@@ -102,6 +103,53 @@ public class RecordGeneratorTest {
             }
             long end = new Date().getTime();
             System.out.println("Finished generating 1,000,000 in (ms): " + (end-start));
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void Test060() {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            JsonNode rootNode = mapper.readValue(new File("src/main/resources/validation-generator.json"), JsonNode.class);
+
+            RecordGenerator recGen = new RecordGenerator(rootNode);
+            long start = new Date().getTime();
+            System.out.println("Starting.. " );
+            for (int i=0;i<10;i++) {
+                String value = recGen.next();
+                System.out.println(value);
+            }
+            long end = new Date().getTime();
+            System.out.println("Finished generating 10 in (ms): " + (end-start));
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void Test070() {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+
+            InputStream stream = getClass().getResourceAsStream("/validation-generator.json");
+            JsonNode rootNode = mapper.readValue(stream, JsonNode.class);
+
+            RecordGenerator recGen = new RecordGenerator(rootNode);
+//            RecordGenerator recGen = new RecordGenerator(null);
+            long start = new Date().getTime();
+            System.out.println("Starting.. (from resource) " );
+            for (int i=0;i<10;i++) {
+                String value = recGen.next();
+                System.out.println(value);
+            }
+            long end = new Date().getTime();
+            System.out.println("Finished generating 10 in (ms): " + (end-start));
 
 
         } catch (Exception e) {
