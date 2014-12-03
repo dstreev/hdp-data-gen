@@ -116,6 +116,7 @@
             <groupId>org.apache.kafka</groupId>
             <artifactId>${kafka.artifact}</artifactId>
             <version>${kafka.version}</version>
+            <scope>provided</scope>
         </dependency>
         <!--dependency>
             <groupId>org.apache.kafka</groupId>
@@ -183,17 +184,18 @@
         <!--<version>${pig.version}</version>-->
         <!--<scope>test</scope>-->
         <!--</dependency>-->
-        <dependency>
-            <groupId>jaxen</groupId>
-            <artifactId>jaxen</artifactId>
-            <version>${jaxen.version}</version>
-        </dependency>
 
-        <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>ST4</artifactId>
-            <version>4.0.8</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>jaxen</groupId>-->
+            <!--<artifactId>jaxen</artifactId>-->
+            <!--<version>${jaxen.version}</version>-->
+        <!--</dependency>-->
+
+        <!--<dependency>-->
+            <!--<groupId>org.antlr</groupId>-->
+            <!--<artifactId>ST4</artifactId>-->
+            <!--<version>4.0.8</version>-->
+        <!--</dependency>-->
 
         <!-- Jackson JSON Libraries -->
         <dependency>
@@ -278,15 +280,16 @@
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
                                         <exclude>META-INF/*.INF</exclude>
+                                        <exclude>META-INF/**/pom.xml</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
-                            <!--<artifactSet>-->
-                            <!--<excludes>-->
-                            <!--<exclude>org.apache.hadoop:*</exclude>-->
-                            <!--<exclude>org.apache.pig:*</exclude>-->
-                            <!--</excludes>-->
-                            <!--</artifactSet>-->
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>org.apache.kafka:*</exclude>
+                                    <exclude>org.scala-lang:scala-library:*</exclude>
+                                </excludes>
+                            </artifactSet>
                         </configuration>
                     </execution>
                 </executions>
