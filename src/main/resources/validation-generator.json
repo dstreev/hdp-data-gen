@@ -18,16 +18,26 @@
         {
             "date": {
                 "order": 3,
+                "format": "MM/dd/yyyy",
+                "range": {
+                    "min": "01/01/2013",
+                    "max": "02/01/2013"
+                }
+            }
+        },
+        {
+            "date": {
+                "order": 4,
                 "format": "yyyy-MM-dd",
                 "range": {
-                    "min": "2013-01-01 00:00:00",
-                    "max": "2013-04-01 23:59:59"
+                    "min": "2013-02-01",
+                    "max": "2013-03-01"
                 }
             }
         },
         {
             "string": {
-                "order": 4,
+                "order": 5,
                 "random": {
                     "min": 3,
                     "max": 5,
@@ -40,7 +50,7 @@
         },
         {
             "number": {
-                "order": 5,
+                "order": 6,
                 "type": "int",
                 "min": 100,
                 "max": 1000
@@ -48,32 +58,32 @@
         },
         {
             "ip": {
-                "order": 6,
+                "order": 7,
                 "minIp": "10.0.14.0",
                 "maxIp": "10.121.32.254"
             }
         },
         {
             "null": {
-                "order": 7,
+                "order": 8,
                 "nullvalue": "NULL"
             }
         },
         {
             "boolean": {
-                "order": 8,
+                "order": 9,
                 "format": "Y:N"
             }
         },
         {
             "boolean": {
-                "order": 9,
+                "order": 10,
                 "format": "true:false"
             }
         },
         {
             "string": {
-                "order":10,
+                "order":11,
                 "set": ["To", "From"]
             }
         }
